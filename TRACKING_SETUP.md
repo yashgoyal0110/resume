@@ -36,6 +36,19 @@ GitHub Pages will redeploy in a minute. Open the site, then check your sheet —
 you should see a new row. To verify the endpoint directly, open the Web app URL
 in your browser; it prints "Resume tracker live. Visits so far: N".
 
+## Email notifications
+
+You also get a formatted email per visit. It's sent from inside the script on
+Google's servers **after** the visitor's browser has already moved on, so it adds
+**zero latency** to the page load (the browser never waits for the response).
+
+- Set the recipient at the top of [Code.gs](Code.gs): `var NOTIFY_EMAIL = "...";`
+  Set it to `""` to turn emails off (the sheet log still works).
+- The first time email fires, Google may ask for one extra permission
+  (send email as you) — approve it the same way as the first deploy.
+- Gmail sending limit on free accounts is ~100 emails/day, plenty for a resume.
+- Subject looks like: `📄 Resume opened — visit #7 (Mumbai, Maharashtra, India)`
+
 ## What you get per visit
 
 | Column | Example |
