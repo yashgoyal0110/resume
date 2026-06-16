@@ -59,6 +59,28 @@ function doPost(e) {
   }
 }
 
+// Run this ONCE from the Apps Script editor (select testEmail → Run).
+// It forces the "send email" permission prompt and sends you a sample,
+// after which the live web app can send emails too.
+function testEmail() {
+  sendVisitEmail(0, new Date(), {
+    city: "Test City", region: "Test", country: "India",
+    ip: "0.0.0.0", isp: "Test ISP",
+    userAgent: "Test browser", referrer: "(direct)",
+    language: "en-US", timezone: "Asia/Kolkata",
+    screen: "1920x1080", page: "https://cv.yashgoyal.sbs"
+  });
+}
+
+// Run this from the editor to see the REAL error (no try/catch hiding it).
+// Check View → Executions / the log after running.
+function testEmailRaw() {
+  Logger.log("Remaining daily quota: " + MailApp.getRemainingDailyQuota());
+  Logger.log("Sending to: " + NOTIFY_EMAIL);
+  MailApp.sendEmail(NOTIFY_EMAIL, "Resume tracker test", "If you got this, email works.");
+  Logger.log("sendEmail returned without throwing.");
+}
+
 function sendVisitEmail(count, now, d) {
   if (!NOTIFY_EMAIL) return;
   try {
