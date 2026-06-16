@@ -29,5 +29,41 @@
   </head>
   <body>
     <iframe src="yashgoyalcv.pdf"></iframe>
+
+    <!-- Visit tracking: pings a Google Apps Script which logs one row per visit -->
+    <script>
+      (async function () {
+        // 1) Paste your deployed Apps Script web-app URL here (see TRACKING_SETUP.md)
+        var ENDPOINT = "https://script.google.com/macros/s/AKfycbwhmmcIEIiEiyPCBAqZsJOVL3HhDnah7Jojp1Wla2DWqMSjl_0ApymHYdUaO0aizqVY/exec";
+        if (ENDPOINT.indexOf("REPLACE_WITH") === 0) return;
+        try {
+          var geo = {};
+          try {
+            var r = await fetch("https://ipwho.is/");
+            geo = await r.json();
+          } catch (e) {}
+          var data = {
+            time: new Date().toISOString(),
+            page: location.href,
+            referrer: document.referrer || "(direct)",
+            userAgent: navigator.userAgent,
+            language: navigator.language || "",
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
+            screen: screen.width + "x" + screen.height,
+            ip: geo.ip || "",
+            city: geo.city || "",
+            region: geo.region || "",
+            country: geo.country || "",
+            isp: (geo.connection && geo.connection.isp) || ""
+          };
+          fetch(ENDPOINT, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(data)
+          });
+        } catch (e) {}
+      })();
+    </script>
   </body>
 </html>
