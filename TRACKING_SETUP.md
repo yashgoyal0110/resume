@@ -57,12 +57,25 @@ Browsers deliberately hide these — no website can read them:
 
 The list above is the maximum a site is allowed to know about a visitor.
 
+## Troubleshooting
+
+**`403 Forbidden` on the `script.google.com/.../exec` POST** — your deployment
+isn't public. Fix it:
+1. In Apps Script: **Deploy → Manage deployments → pencil ✏**.
+2. Set **Who has access** to **Anyone** (NOT "Anyone with Google account").
+3. **Version: New version → Deploy**. The URL stays the same.
+4. Reload the resume page; the row should appear.
+
+If it still 403s, make sure you authorized the script (run `doPost` once from the
+editor, or open the `/exec` URL in your browser and approve the permission prompt).
+
+**`403` on the IP-geo request** — harmless; the visit is still logged, just with
+blank location. The page tries `get.geojs.io` then falls back to `ipapi.co`.
+
 ## Notes / limits
 
-- Location comes from a free IP lookup (`ipwho.is`). VPNs/proxies will show the
-  VPN's location. If the lookup is down, the visit is still counted (geo blank).
-- `ipwho.is` is free with no API key. If you ever hit limits, swap the URL in
-  index.html for `https://ipapi.co/json/` (same idea, free tier 1k/day).
+- Location comes from a free keyless IP lookup. VPNs/proxies show the VPN's
+  location. If both lookups fail, the visit is still counted (geo blank).
 - A reload counts as a new visit. If you want unique-per-day instead, say so and
   I'll add a localStorage guard.
 - To re-deploy after editing Code.gs later: **Deploy → Manage deployments →**

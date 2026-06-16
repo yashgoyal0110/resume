@@ -37,11 +37,17 @@
         var ENDPOINT = "https://script.google.com/macros/s/AKfycbwhmmcIEIiEiyPCBAqZsJOVL3HhDnah7Jojp1Wla2DWqMSjl_0ApymHYdUaO0aizqVY/exec";
         if (ENDPOINT.indexOf("REPLACE_WITH") === 0) return;
         try {
+          // Keyless IP-geo lookup with a fallback (services rate-limit / block).
           var geo = {};
           try {
-            var r = await fetch("https://ipwho.is/");
+            var r = await fetch("https://get.geojs.io/v1/ip/geo.json");
             geo = await r.json();
-          } catch (e) {}
+          } catch (e) {
+            try {
+              var r2 = await fetch("https://ipapi.co/json/");
+              geo = await r2.json();
+            } catch (e2) {}
+          }
           var data = {
             time: new Date().toISOString(),
             page: location.href,
@@ -52,9 +58,9 @@
             screen: screen.width + "x" + screen.height,
             ip: geo.ip || "",
             city: geo.city || "",
-            region: geo.region || "",
-            country: geo.country || "",
-            isp: (geo.connection && geo.connection.isp) || ""
+            region: geo.region || geo.region_code || "",
+            country: geo.country || geo.country_name || "",
+            isp: geo.organization_name || geo.org || geo.organization || ""
           };
           fetch(ENDPOINT, {
             method: "POST",
