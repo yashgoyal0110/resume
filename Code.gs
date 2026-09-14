@@ -10,6 +10,13 @@
 // Where to send visit notifications. Set "" to disable email.
 var NOTIFY_EMAIL = "yg364550@gmail.com";
 
+// Turns the code from the URL into what gets logged. You pick a random string
+// per person (e.g. ?v=7f3a) and keep your own note of who got which one.
+function resolveVisitor(d) {
+  if (!d.tag) return "";
+  return d.tag + (d.tagRemembered ? " (return visit)" : "");
+}
+
 function doPost(e) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000); // avoid two visits writing the same row at once
@@ -17,14 +24,21 @@ function doPost(e) {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName("Visits") || ss.insertSheet("Visits");
 
+    var HEADERS = [
+      "#", "Logged at (server)", "Visit time (browser)",
+      "Link code",
+      "City", "Region", "Country", "IP", "ISP",
+      "Browser / OS (User-Agent)", "Referrer",
+      "Language", "Timezone", "Screen", "Page",
+      "utm_source", "utm_medium", "utm_campaign"
+    ];
+
     if (sheet.getLastRow() === 0) {
-      sheet.appendRow([
-        "#", "Logged at (server)", "Visit time (browser)",
-        "City", "Region", "Country", "IP", "ISP",
-        "Browser / OS (User-Agent)", "Referrer",
-        "Language", "Timezone", "Screen", "Page"
-      ]);
+      sheet.appendRow(HEADERS);
       sheet.setFrozenRows(1);
+    } else if (sheet.getLastColumn() < HEADERS.length) {
+      // Sheet created before tagging existed - refresh the header labels.
+      sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
     }
 
     var d = {};
@@ -36,6 +50,7 @@ function doPost(e) {
       count,
       now,
       d.time || "",
+      resolveVisitor(d),
       d.city || "",
       d.region || "",
       d.country || "",
@@ -46,7 +61,10 @@ function doPost(e) {
       d.language || "",
       d.timezone || "",
       d.screen || "",
-      d.page || ""
+      d.page || "",
+      d.utmSource || "",
+      d.utmMedium || "",
+      d.utmCampaign || ""
     ]);
 
     // Runs on Google's servers after the visitor's browser has moved on,
@@ -68,7 +86,9 @@ function testEmail() {
     ip: "0.0.0.0", isp: "Test ISP",
     userAgent: "Test browser", referrer: "(direct)",
     language: "en-US", timezone: "Asia/Kolkata",
-    screen: "1920x1080", page: "https://cv.yashgoyal.sbs"
+    screen: "1920x1080", page: "https://cv.yashgoyal.sbs/?v=7f3a",
+    tag: "7f3a", tagRemembered: false,
+    utmSource: "", utmMedium: "", utmCampaign: ""
   });
 }
 
@@ -86,9 +106,13 @@ function sendVisitEmail(count, now, d) {
   try {
     var place = [d.city, d.region, d.country].filter(function (x) { return x; }).join(", ") || "Unknown location";
     var when = Utilities.formatDate(now, Session.getScriptTimeZone(), "EEE, d MMM yyyy, h:mm a z");
-    var subject = "📄 Resume opened — visit #" + count + " (" + place + ")";
+    var who = resolveVisitor(d);
+    var subject = who
+      ? "📄 " + who + " opened your resume — visit #" + count + " (" + place + ")"
+      : "📄 Resume opened — visit #" + count + " (" + place + ")";
 
     var rows = [
+      ["Link code", who || "(plain link, no code)"],
       ["Visit #", String(count)],
       ["When", when],
       ["Location", place],
@@ -111,7 +135,7 @@ function sendVisitEmail(count, now, d) {
 
     var html =
       '<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:560px;margin:auto;">' +
-        '<h2 style="margin:0 0 4px;color:#111;">Someone opened your resume</h2>' +
+        '<h2 style="margin:0 0 4px;color:#111;">' + escapeHtml(who || "Someone") + ' opened your resume</h2>' +
         '<p style="margin:0 0 16px;color:#888;font-size:13px;">cv.yashgoyal.sbs · visit #' + count + '</p>' +
         '<table style="border-collapse:collapse;width:100%;font-size:14px;border:1px solid #eee;border-radius:8px;overflow:hidden;">' +
           trs +

@@ -48,9 +48,29 @@
               geo = await r2.json();
             } catch (e2) {}
           }
+          // Per-recipient link code. You hand out a distinct link to each
+          // person, e.g. cv.yashgoyal.sbs/?v=7f3a, and the visit row tells you
+          // which link was opened. Reads as a cache-busting version param.
+          var qs = new URLSearchParams(location.search);
+          var tag = qs.get("v") || qs.get("utm_campaign") || qs.get("utm_source") || "";
+          var remembered = false;
+          try {
+            if (tag) {
+              localStorage.setItem("rv", tag);
+            } else {
+              tag = localStorage.getItem("rv") || "";
+              remembered = !!tag; // same browser returning without the param
+            }
+          } catch (e) {}
+
           var data = {
             time: new Date().toISOString(),
             page: location.href,
+            tag: tag,
+            tagRemembered: remembered,
+            utmSource: qs.get("utm_source") || "",
+            utmMedium: qs.get("utm_medium") || "",
+            utmCampaign: qs.get("utm_campaign") || "",
             referrer: document.referrer || "(direct)",
             userAgent: navigator.userAgent,
             language: navigator.language || "",

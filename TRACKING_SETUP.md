@@ -49,22 +49,77 @@ Google's servers **after** the visitor's browser has already moved on, so it add
 - Gmail sending limit on free accounts is ~100 emails/day, plenty for a resume.
 - Subject looks like: `📄 Resume opened — visit #7 (Mumbai, Maharashtra, India)`
 
+## Knowing *who* opened it — coded links
+
+A browser can never tell you a visitor's name. The way around that is to **hand
+out a different URL to each person** and keep the name on your side.
+
+Pick a short random string per person and share it as `?v=` — a param that
+reads like an ordinary cache-buster:
+
+```
+https://cv.yashgoyal.sbs/?v=7f3a
+https://cv.yashgoyal.sbs/?v=k29xq
+```
+
+Keep your own note of which code went to whom (a notes app, or a second tab in
+the same sheet). The code lands in the **Link code** column and in the email
+subject:
+
+> 📄 **7f3a** opened your resume — visit #12 (Bengaluru, Karnataka, India)
+
+The recipient's URL says nothing about them, and the name lives only in your
+notes — so there is nothing to leak even if someone inspects the link or the
+page source.
+
+Generate codes however you like, e.g.:
+
+```sh
+openssl rand -hex 2     # -> 7f3a
+```
+
+### Notes
+
+- Use codes you won't confuse later — random is the point, but 4–5 characters
+  is plenty and stays easy to read in a subject line.
+- `utm_source` / `utm_medium` / `utm_campaign` are still read and logged in
+  their own columns if you'd rather use the standard convention somewhere the
+  params are expected anyway.
+- A visit with no code logs normally as `(plain link, no code)`.
+- The code is remembered in `localStorage`, so if the same person reloads
+  without the param you still see which link it was, marked `(return visit)`.
+
+### Caveats worth knowing
+
+- A code identifies the **link**, not the human. If your contact forwards the
+  URL to three colleagues, all four show up under the same code. Cross-check
+  the IP/city/User-Agent columns when one code fires from several places.
+- The code is visible in the address bar, and anyone who looks at the page
+  source can see the script posting somewhere. It's opaque, not invisible —
+  assume a sufficiently curious engineer will work out that the link is
+  tracked, even though they can't tell what the code means.
+- Nothing is tracked at all if they open a PDF you sent as an attachment. The
+  link has to be clicked.
+
 ## What you get per visit
 
 | Column | Example |
 |---|---|
 | # (count) | 1, 2, 3 … |
+| Link code | 7f3a (from `?v=` on the link you shared) |
 | Logged at / Visit time | timestamps |
 | City / Region / Country | Mumbai, Maharashtra, India |
 | IP / ISP | 49.x.x.x, Jio |
 | Browser / OS | the full User-Agent (Chrome on Windows, etc.) |
 | Referrer | where they clicked from (LinkedIn, email, direct) |
 | Language / Timezone / Screen | en-US, Asia/Kolkata, 1920x1080 |
+| utm_source / medium / campaign | linkedin, dm, acme-anna |
 
 ## What is NOT possible (and why)
 
 Browsers deliberately hide these — no website can read them:
-- The visitor's **name** or email
+- The visitor's **name** or email (coded links above are the workaround: you
+  label the link yourself instead of asking the browser)
 - Which **Chrome profile** they're signed into
 - Their precise GPS location (only IP-based city, which can be off / VPN-masked)
 
@@ -91,5 +146,8 @@ blank location. The page tries `get.geojs.io` then falls back to `ipapi.co`.
   location. If both lookups fail, the visit is still counted (geo blank).
 - A reload counts as a new visit. If you want unique-per-day instead, say so and
   I'll add a localStorage guard.
+- After pulling this update, re-deploy the script (below) so the new columns
+  take effect. The header row of an existing sheet is upgraded
+  automatically on the next visit.
 - To re-deploy after editing Code.gs later: **Deploy → Manage deployments →**
   pencil ✏ → **Version: New version → Deploy** (the URL stays the same).
